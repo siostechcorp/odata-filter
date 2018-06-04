@@ -1,0 +1,12 @@
+(* A simple grammer for odata sorting expressions *)
+(* In 'instaparse' enhanced-ebnf format :) *)
+sort = <whitespace>? expression <whitespace>? ;   (* this is to allow a single top-level tag in the ast for transform ease *)
+<expression> = propertylist ;
+propertylist = (propertyclause <whitespace>? <comma> <whitespace>?)* propertyclause ;
+propertyclause = property (<whitespace> direction)? ;
+<direction> = asc | desc ;
+asc = <#'[Aa][Ss][Cc]([Ee][Nn][Dd][Ii][Nn][Gg])?'> ;
+desc = <#'[Dd][Ee][Ss][Cc]([Ee][Nn][Dd][Ii][Nn][Gg])?'> ;
+property = #'[a-zA-Z0-9_.]+' ;
+comma = #',' ;
+whitespace = #'\s+' ;

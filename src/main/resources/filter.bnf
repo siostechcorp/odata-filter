@@ -1,0 +1,60 @@
+(* A simple grammer for odata filter expressions - mostly boolean expressions *)
+(* In 'instaparse' enhanced-ebnf format :) *)
+filter = <whitespace>? expression <whitespace>? ;   (* this is to allow a single top-level tag in the ast for transform ease *)
+expression = comparison
+           | emptycomparison
+           | nullcomparison
+           | (expression <whitespace> conjop <whitespace>)+ expression
+           | (not <whitespace>*)? (<'('> <whitespace>?) expression (<whitespace>? <')'>) ;
+comparison = (not <whitespace>)? property <whitespace> compop <whitespace> terminal
+           | (not <whitespace>)? property <whitespace> like <whitespace> likestring
+           | (not <whitespace>)? property <whitespace> ilike <whitespace> likestring ;
+emptycomparison = (not <whitespace>)? property <whitespace> <isop> <whitespace> <empty> ;
+nullcomparison = (not <whitespace>)? property <whitespace> <isop> <whitespace> <null> ;
+(* Note: like/likestring and is/empty are not treated as compop's since they *)
+(* are special cases - like only goes with a likestring not a terminal *)
+<compop> = eq | ne | gt | ge | lt | le | containid | containitem | contain ;
+<isop> = is ;
+eq = #'[Ee][Qq]' ;
+ne = #'[Nn][Ee]' ;
+gt = #'[Gg][Tt]' ;
+ge = #'[Gg][Ee]' ;
+lt = #'[Ll][Tt]' ;
+le = #'[Ll][Ee]' ;
+is = #'[Ii][Ss]' ;
+contain = #'[Cc][Oo][Nn][Tt][Aa][Ii][Nn][Ss]?' | #'[Cc][Tt]' ;
+containid = #'[Cc][Oo][Nn][Tt][Aa][Ii][Nn][Ss]?[Ii][Dd]' | #'[Cc][Tt][Ii][Dd]' ;
+containitem = #'[Cc][Oo][Nn][Tt][Aa][Ii][Nn][Ss]?[Ii][Tt][Ee][Mm]' | #'[Cc][Tt][Ii][Tt][Ee][Mm]' ;
+like = #'[Ll][Ii][Kk][Ee]' ;
+ilike = #'[Ii][Ll][Ii][Kk][Ee]' ;
+not = #'[Nn][Oo][Tt]' ;
+<conjop> = and | or ;
+and = #'[Aa][Nn][Dd]' ;
+or = #'[Oo][Rr]' ;
+<terminal> = string | numeric | dateascal | dateasdate | boolean | enum ;
+<empty> = #'[Ee][Mm][Pp][Tt][Yy]' ;
+string = <'"'> #'[^"]*' <'"'> | <"'"> #"[^']*" <"'"> ;
+(* this one is almost the same as a string (can't be empty) but tagged differently - see emitter code *)
+likestring = <'"'> #'[^"]+' <'"'> | <"'"> #"[^']+" <"'"> ;
+<numeric> = long | integer | float | double | decimal | number ;
+long = <#'[Ll][Oo][Nn][Gg]'> <"'"> #'-?[0-9]+' <"'">
+     | <#'[Ll][Oo][Nn][Gg]'> <'"'> #'-?[0-9]+' <'"'> ;
+integer = <#'[Ii][Nn][Tt]([Ee][Gg][Ee][Rr])?'> <"'"> #'-?[0-9]+' <"'">
+        | <#'[Ii][Nn][Tt]([Ee][Gg][Ee][Rr])?'> <'"'> #'-?[0-9]+' <'"'> ;
+float = <#'[Ff][Ll][Oo][Aa][Tt]'> <"'"> #'-?[0-9.]+' <"'">
+      | <#'[Ff][Ll][Oo][Aa][Tt]'> <'"'> #'-?[0-9.]+' <'"'> ;
+double = <#'[Dd][Oo][Uu][Bb][Ll][Ee]'> <"'"> #'-?[0-9.]+' <"'">
+       | <#'[Dd][Oo][Uu][Bb][Ll][Ee]'> <'"'> #'-?[0-9.]+' <'"'> ;
+decimal = <#'[Dd][Ee][Cc][Ii][Mm][Aa][Ll]'> <"'"> #'-?[0-9.]+' <"'">
+        | <#'[Dd][Ee][Cc][Ii][Mm][Aa][Ll]'> <'"'> #'-?[0-9.]+' <'"'> ;
+dateascal = <#'[Dd][Aa][Tt][Ee]([Tt][Ii][Mm][Ee])?([Aa][Ss][Cc][Aa][Ll])?'> <"'"> #'[0-9TZ:+-.]+' <"'">
+          | <#'[Dd][Aa][Tt][Ee]([Tt][Ii][Mm][Ee])?([Aa][Ss][Cc][Aa][Ll])?'> <'"'> #'[0-9TZ:+-.]+' <'"'> ;
+dateasdate = <#'[Dd][Aa][Tt][Ee]([Tt][Ii][Mm][Ee])?[Aa][Ss][Dd][Aa][Tt][Ee]'> <"'"> #'[0-9TZ:+-.]+' <"'">
+           | <#'[Dd][Aa][Tt][Ee]([Tt][Ii][Mm][Ee])?[Aa][Ss][Dd][Aa][Tt][Ee]'> <'"'> #'[0-9TZ:+-.]+' <'"'> ;
+enum = <#'[Ee][Nn][Uu][Mm]'> <"'"> #'[A-Za-z0-9_.$]+/[A-Za-z0-9_]+' <"'">
+     | <#'[Ee][Nn][Uu][Mm]'> <'"'> #'[A-Za-z0-9_.$]+/[A-Za-z0-9_]+' <'"'> ;
+number = #'-?[0-9.]+' ;
+boolean = #'[Tt][Rr][Uu][Ee]' | #'[Ff][Aa][Ll][Ss][Ee]' ;
+null = #'[Nn][Uu][Ll][Ll]' ;
+property = #'[a-zA-Z0-9_.]+' ;
+whitespace = #'\s+' ;
