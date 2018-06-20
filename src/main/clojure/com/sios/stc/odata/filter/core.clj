@@ -10,15 +10,17 @@
              :as log
              :refer [trace debug info warn error fatal
                      tracef debugf infof warnf errorf fatalf]])
-  (:import (com.sios.stc.odata.filter ParseFailure))
+  (:import (java.util.function Predicate)
+           (com.sios.stc.odata.filter ParseFailure)
+           (com.sios.stc.odata.filter.protocols IQueryInfo))
   (:gen-class
    :name com.sios.stc.odata.filter.core
    :methods [#^{:static true}
-             [makeMatchPredicate [java.lang.String] clojure.lang.IFn]
+             [makeMatchPredicate [java.lang.String] java.util.function.Predicate]
              #^{:static true}
-             [makeQueryInfo [java.lang.String] java.util.Map]
+             [makeQueryInfo [java.lang.String] com.sios.stc.odata.filter.protocols.IQueryInfo]
              #^{:static true}
-             [makeQueryInfo [java.lang.String java.lang.String] java.util.Map]
+             [makeQueryInfo [java.lang.String java.lang.String] com.sios.stc.odata.filter.protocols.IQueryInfo]
              #^{:static true}
              [makeSortComparator [java.lang.String] java.util.Comparator]
              #^{:static true}
@@ -26,6 +28,22 @@
              #^{:static true}
              [makeSortClause [java.lang.String java.lang.String] java.lang.String]]
    ))
+
+;; Our record impl of the IQueryInfo
+;; enabling us to not have to reify the
+;; interface each time we generate one
+;; (saving runtime class creation)
+;; and allowing out return to be the
+;; interface and act like a map when using
+;; the clojure-esque function (the
+;; Java-esque static method still only
+;; returns the interface type meaning
+;; Java consumers can't really see the
+;; underlying map impl.  Too bad.)
+(defrecord QueryInfo [where-clause param-map]
+  IQueryInfo
+  (whereClause [this] where-clause)
+  (parameterMap [this] param-map))
 
 (def memo-cache-size 4096)
 
@@ -282,7 +300,7 @@ map-like thing that tells whether or not it satisfies the filter."
 
 (defn emit-query-info
   "Takes a filter expression AST and an entity-alias and generates
-a predicate query information,
+query information,
 that is, a pair of JPA-style where-clause and map of parameter values.
 
 If entity-alias is nil, no alias will be used in the generated
@@ -348,8 +366,7 @@ the head of the sequence."
                            :nullcomparison rewrite-null-as-ql-expression
                            :expression rewrite-expr-as-ql-expression
                            :filter (fn [v]
-                                     (let [qinfo {"where-clause" v
-                                                  "param-map" @param-map}]
+                                     (let [qinfo (->QueryInfo v @param-map)]
                                        (debugf "Generated query info: '%s'" qinfo)
                                        qinfo))})))))
 
@@ -448,27 +465,29 @@ objects' properties to be, themselves, Comparable."
 (def make-sort-comparator-memo
   (lru make-sort-comparator :lru/threshold memo-cache-size))
 
-(defn ^clojure.lang.IFn -makeMatchPredicate
-  "A java callable wrapper around make-match-predicate-memo"
+(defn ^Predicate -makeMatchPredicate
+  "A java callable predicate wrapper around make-match-predicate-memo"
   [^String s]
   (infof "Generating match predicate from expression: '%s'" s)
-  (make-match-predicate-memo s))
+  (let [pred (make-match-predicate-memo s)]
+    (reify Predicate
+      (test [this o] (pred o)))))
 
-(defn ^java.util.Map -makeQueryInfo
+(defn ^IQueryInfo -makeQueryInfo
   "A java callable wrapper around make-query-info-memo"
   ([^String s] (-makeQueryInfo s nil))
   ([^String s ^String entity-alias]
      (let [qinfo (make-query-info-memo s entity-alias)]
        (infof "Transformed filter expression '%s' into '%s'" s qinfo)
-       qinfo)))
+       qinfo))) ;; qinfo already is an IQueryInfo
 
 (defn ^String -makeSortClause
   "A java callable wrapper around make-sort-clause-memo"
   ([^String s] (-makeSortClause s nil))
   ([^String s ^String entity-alias]
-     (let [clause (make-sort-clause-memo s entity-alias)]
-       (infof "Transformed sort expression '%s' into '%s'" s clause)
-       clause)))
+   (let [clause (make-sort-clause-memo s entity-alias)]
+     (infof "Transformed sort expression '%s' into '%s'" s clause)
+     clause)))
 
 (defn ^java.util.Comparator -makeSortComparator
   "A java callable wrapper around make-sort-comparator-memo

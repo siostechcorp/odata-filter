@@ -26,7 +26,9 @@ into JPA/SQL style 'where' clauses and into in-memory predicate/comparator funct
   :test-paths ["src/test/clojure"]
   :resource-paths ["src/main/resources"]
   :repl-options {:init-ns com.sios.stc.odata.filter.core}
-  :aot [com.sios.stc.odata.filter.ParseFailure com.sios.stc.odata.filter.core]
+  :aot [com.sios.stc.odata.filter.ParseFailure
+        com.sios.stc.odata.filter.protocols
+        com.sios.stc.odata.filter.core]
   :main com.sios.stc.odata.filter.core
   ;; :auto-clean false
   ;; :deploy-branches ["master"] ;; just to be safe - don't use with jenkins

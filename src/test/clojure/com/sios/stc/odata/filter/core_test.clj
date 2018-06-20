@@ -50,97 +50,97 @@
   (testing "Simple query generation"
     (let [qinfo (make-query-info "id gt 5 and not things contain 42 and not tags is empty" "obj")]
       (is (not (nil? qinfo)))
-      (is (= 2 (count (qinfo "param-map"))))
-      (is (re-matches #"^.*id > :.*$" (qinfo "where-clause")))
+      (is (= 2 (count (qinfo :param-map))))
+      (is (re-matches #"^.*id > :.*$" (qinfo :where-clause)))
       (is (re-matches #"^.*exists.*select.*\.things.*where.*$"
-                      (qinfo "where-clause"))))))
+                      (qinfo :where-clause))))))
 
 (deftest simple-query-test-2
   (testing "Simple query generation"
     (let [qinfo (make-query-info "id gt 5 and not things ct 42 and not tags is empty" "obj")]
       (is (not (nil? qinfo)))
-      (is (= 2 (count (qinfo "param-map"))))
-      (is (re-matches #"^.*id > :.*$" (qinfo "where-clause")))
+      (is (= 2 (count (qinfo :param-map))))
+      (is (re-matches #"^.*id > :.*$" (qinfo :where-clause)))
       (is (re-matches #"^.*exists.*select.*\.things.*where.*$"
-                      (qinfo "where-clause"))))))
+                      (qinfo :where-clause))))))
 
 (deftest simple-query-test-with-contains-id
   (testing "Simple query generation with contains-id"
     (let [qinfo (make-query-info "id gt 5 and not things containsid 42 and not tags is empty" "obj")]
       (is (not (nil? qinfo)))
-      (is (= 2 (count (qinfo "param-map"))))
-      (is (re-matches #"^.*id > :.*$" (qinfo "where-clause")))
+      (is (= 2 (count (qinfo :param-map))))
+      (is (re-matches #"^.*id > :.*$" (qinfo :where-clause)))
       (is (re-matches #"^.*exists.*select.*\.things.*where.*$"
-                      (qinfo "where-clause"))))))
+                      (qinfo :where-clause))))))
 
 (deftest simple-query-test-with-contains-item
   (testing "Simple query generation with contains-item"
     (let [qinfo (make-query-info "id gt 5 and things containsitem 42 and not tags is empty" "obj")]
       (is (not (nil? qinfo)))
-      (is (= 2 (count (qinfo "param-map"))))
-      (is (re-matches #"^.*id > :.*$" (qinfo "where-clause")))
+      (is (= 2 (count (qinfo :param-map))))
+      (is (re-matches #"^.*id > :.*$" (qinfo :where-clause)))
       (is (re-matches #"^.* MEMBER OF obj.things.*$"
-                      (qinfo "where-clause"))))))
+                      (qinfo :where-clause))))))
 
 (deftest simple-query-test-with-not-contains-item
   (testing "Simple query generation with not contains-item"
     (let [qinfo (make-query-info "id gt 5 and not things containsitem 42 and not tags is empty" "obj")]
       (is (not (nil? qinfo)))
-      (is (= 2 (count (qinfo "param-map"))))
-      (is (re-matches #"^.*id > :.*$" (qinfo "where-clause")))
+      (is (= 2 (count (qinfo :param-map))))
+      (is (re-matches #"^.*id > :.*$" (qinfo :where-clause)))
       (is (re-matches #"^.* NOT MEMBER OF obj.things.*$"
-                      (qinfo "where-clause"))))))
+                      (qinfo :where-clause))))))
 
 (deftest like-query-test
   (testing "Like query generation"
     (let [qinfo (make-query-info "not name like 'kevin'" "obj")]
       (is (not (nil? qinfo)))
-      (is (= 1 (count (qinfo "param-map"))))
-      (is (re-matches #"^.*NOT LIKE.*" (qinfo "where-clause")))
-      (is (= "%kevin%" (second (first (qinfo "param-map"))))))))
+      (is (= 1 (count (qinfo :param-map))))
+      (is (re-matches #"^.*NOT LIKE.*" (qinfo :where-clause)))
+      (is (= "%kevin%" (second (first (qinfo :param-map))))))))
 
 (deftest like-query-test-with-incoming-wildcards
   (testing "Like query generation with incoming wildcards"
     (let [qinfo (make-query-info "not name like 'kev_in%'" "obj")]
       (is (not (nil? qinfo)))
-      (is (= 1 (count (qinfo "param-map"))))
-      (is (re-matches #"^.*NOT LIKE.*" (qinfo "where-clause")))
-      (is (= "%kev\\_in\\%%" (second (first (qinfo "param-map"))))))))
+      (is (= 1 (count (qinfo :param-map))))
+      (is (re-matches #"^.*NOT LIKE.*" (qinfo :where-clause)))
+      (is (= "%kev\\_in\\%%" (second (first (qinfo :param-map))))))))
 
 (deftest insensitive-like-query-test
   (testing "Insensitive like query generation"
     (let [qinfo (make-query-info "not name ilike 'Kevin'" "obj")]
       (is (not (nil? qinfo)))
-      (is (= 1 (count (qinfo "param-map"))))
-      (is (re-matches #"^.*LOWER.*NOT LIKE.*LOWER.*" (qinfo "where-clause")))
-      (is (= "%Kevin%" (second (first (qinfo "param-map"))))))))
+      (is (= 1 (count (qinfo :param-map))))
+      (is (re-matches #"^.*LOWER.*NOT LIKE.*LOWER.*" (qinfo :where-clause)))
+      (is (= "%Kevin%" (second (first (qinfo :param-map))))))))
 
 (deftest bool-query-test
   (testing "bool query generation"
     (let [qinfo (make-query-info "named eq True and active ne fALse" "obj")]
       (is (not (nil? qinfo)))
-      (is (= 0 (count (qinfo "param-map")))) ;; bools get directly translated
-      (is (re-matches #"^.*TRUE.*" (qinfo "where-clause")))
-      (is (re-matches #"^.*FALSE.*" (qinfo "where-clause"))))))
+      (is (= 0 (count (qinfo :param-map)))) ;; bools get directly translated
+      (is (re-matches #"^.*TRUE.*" (qinfo :where-clause)))
+      (is (re-matches #"^.*FALSE.*" (qinfo :where-clause))))))
 
 (deftest empty-string-query-test
   (testing "empty string query generation"
     (let [qinfo (make-query-info "not name eq ''" "obj")]
       (is (not (nil? qinfo)))
-      (is (= 1 (count (qinfo "param-map"))))
-      (is (re-matches #"^.*NOT.+=.*" (qinfo "where-clause")))
-      (is (= "" (second (first (qinfo "param-map"))))))
+      (is (= 1 (count (qinfo :param-map))))
+      (is (re-matches #"^.*NOT.+=.*" (qinfo :where-clause)))
+      (is (= "" (second (first (qinfo :param-map))))))
     (let [qinfo (make-query-info "not name eq \"\"" "obj")]
       (is (not (nil? qinfo)))
-      (is (= 1 (count (qinfo "param-map"))))
-      (is (re-matches #"^.*=.*" (qinfo "where-clause")))
-      (is (= "" (second (first (qinfo "param-map"))))))))
+      (is (= 1 (count (qinfo :param-map))))
+      (is (re-matches #"^.*=.*" (qinfo :where-clause)))
+      (is (= "" (second (first (qinfo :param-map))))))))
 
 (deftest is-null-query-test
   (testing "is null query generation"
     (let [qinfo (make-query-info "name is null" "obj")]
       (is (not (nil? qinfo)))
-      (is (= 0 (count (qinfo "param-map"))))))) ;; nulls get directly translated
+      (is (= 0 (count (qinfo :param-map))))))) ;; nulls get directly translated
 
 ;; Note: These two null tests are expected to
 ;;       see the overall closing paren so the null
@@ -150,15 +150,15 @@
   (testing "not (is null) query generation"
     (let [qinfo (make-query-info "five eq 5 and not (name is null)" "obj")]
       (is (not (nil? qinfo)))
-      (is (.contains (qinfo "where-clause") "NOT (obj.name IS NULL))"))
-      (is (= 1 (count (qinfo "param-map"))))))) ;; 5 only actual param
+      (is (.contains (qinfo :where-clause) "NOT (obj.name IS NULL))"))
+      (is (= 1 (count (qinfo :param-map))))))) ;; 5 only actual param
 
 (deftest is-not-null-query-test
   (testing "is not null query generation"
     (let [qinfo (make-query-info "five eq 5 and not name is null" "obj")]
       (is (not (nil? qinfo)))
-      (is (.contains (qinfo "where-clause") "(obj.name IS NOT NULL))"))
-      (is (= 1 (count (qinfo "param-map"))))))) ;; 5 only actual param
+      (is (.contains (qinfo :where-clause) "(obj.name IS NOT NULL))"))
+      (is (= 1 (count (qinfo :param-map))))))) ;; 5 only actual param
 
 (deftest literals-query-test
   (testing "literals query generation"
@@ -176,7 +176,7 @@
                                       " and seven eq enum'java.awt.Color/RED'")
                                  "thingie")]
       (is (not (nil? qinfo)))
-      (is (= 12 (count (qinfo "param-map")))))))
+      (is (= 12 (count (qinfo :param-map)))))))
 
 (deftest literals-predicate-test
   (testing "literals predicate generation"
@@ -279,14 +279,14 @@
       (log/debug "QUERY 2" qinfo2)
       (log/debug "QUERY 3" qinfo3)
       (log/debug "QUERY NESTER EXPR" nested)
-      (log/debug "QUERY TYPES 3" (map type (vals (qinfo3 "param-map"))))
-      (log/debug "QUERY TYPES 4" (map type (vals (qinfo4 "param-map"))))
-      (is (.startsWith (qinfo1 "where-clause") "((("))
-      (is (.contains (qinfo1 "where-clause") "NULL)) AND (exists"))
-      (is (.startsWith (qinfo2 "where-clause") "((("))
-      (is (.contains (qinfo2 "where-clause") "NULL)) AND (exists"))
-      (is (.startsWith (qinfo3 "where-clause") "((("))
-      (is (.contains (qinfo3 "where-clause") "NULL)) AND (exists"))
+      (log/debug "QUERY TYPES 3" (map type (vals (qinfo3 :param-map))))
+      (log/debug "QUERY TYPES 4" (map type (vals (qinfo4 :param-map))))
+      (is (.startsWith (qinfo1 :where-clause) "((("))
+      (is (.contains (qinfo1 :where-clause) "NULL)) AND (exists"))
+      (is (.startsWith (qinfo2 :where-clause) "((("))
+      (is (.contains (qinfo2 :where-clause) "NULL)) AND (exists"))
+      (is (.startsWith (qinfo3 :where-clause) "((("))
+      (is (.contains (qinfo3 :where-clause) "NULL)) AND (exists"))
       )))
 
 ;; Attempt to use the predicate feature to ensure that
